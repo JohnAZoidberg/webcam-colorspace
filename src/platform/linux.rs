@@ -57,17 +57,18 @@ fn read_device(node: &context::Node) -> Result<Option<DeviceInfo>> {
 
                 let frame_rates: Vec<String> = intervals
                     .iter()
-                    .filter_map(|fi| {
-                        fi.interval.to_discrete().first().map(|frac| {
+                    .filter_map(|fi| match &fi.interval {
+                        v4l::frameinterval::FrameIntervalEnum::Discrete(frac) => {
                             if frac.numerator > 0 {
-                                format!(
+                                Some(format!(
                                     "{:.2} fps",
                                     frac.denominator as f64 / frac.numerator as f64
-                                )
+                                ))
                             } else {
-                                "Unknown".to_string()
+                                None
                             }
-                        })
+                        }
+                        _ => None,
                     })
                     .collect();
 
