@@ -6,6 +6,7 @@ pub enum Command {
         device_index: usize,
         resolution: Option<(u32, u32)>,
         mirror: bool,
+        save_raw: bool,
     },
     ForceMatrix {
         matrix: MatrixChoice,
@@ -35,10 +36,13 @@ pub fn parse_args() -> anyhow::Result<Command> {
             let mut device_index = 0usize;
             let mut resolution = None;
             let mut mirror = false;
+            let mut save_raw = false;
 
             for arg in &args[1..] {
                 if arg == "--mirror" {
                     mirror = true;
+                } else if arg == "--save-raw" {
+                    save_raw = true;
                 } else if let Some(res) = parse_resolution(arg) {
                     resolution = Some(res);
                 } else if let Ok(n) = arg.parse::<usize>() {
@@ -48,7 +52,7 @@ pub fn parse_args() -> anyhow::Result<Command> {
                     device_index = n - 1;
                 } else {
                     anyhow::bail!(
-                        "Unknown argument '{}' for --capture-test. Expected a device number, WxH resolution, or --mirror.",
+                        "Unknown argument '{}' for --capture-test. Expected a device number, WxH resolution, --mirror, or --save-raw.",
                         arg
                     );
                 }
@@ -58,6 +62,7 @@ pub fn parse_args() -> anyhow::Result<Command> {
                 device_index,
                 resolution,
                 mirror,
+                save_raw,
             })
         }
         "--force-matrix" => {
@@ -117,7 +122,7 @@ pub fn print_usage() {
     eprintln!("    webcam-colorspace");
     eprintln!("        Enumerate devices and show colorspace info");
     eprintln!();
-    eprintln!("    webcam-colorspace --capture-test [N] [WxH] [--mirror]");
+    eprintln!("    webcam-colorspace --capture-test [N] [WxH] [--mirror] [--save-raw]");
     eprintln!("        Capture a frame and decode with BT.601 + BT.709");
     eprintln!();
     eprintln!("    webcam-colorspace --force-matrix bt601|bt709 [N]");
@@ -137,6 +142,7 @@ pub fn print_usage() {
     eprintln!(
         "    webcam-colorspace --capture-test --mirror      # capture mirrored (selfie view)"
     );
+    eprintln!("    webcam-colorspace --capture-test --save-raw    # also save raw NV12 bytes");
     eprintln!("    webcam-colorspace --capture-test 2 640x480    # device 2, 640x480");
     eprintln!("    webcam-colorspace --force-matrix bt709        # force BT.709 on device 1");
     eprintln!("    webcam-colorspace --force-matrix bt601 2      # force BT.601 on device 2");

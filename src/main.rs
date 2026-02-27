@@ -15,7 +15,8 @@ fn main() -> anyhow::Result<()> {
             device_index,
             resolution,
             mirror,
-        } => run_capture_test(device_index, resolution, mirror),
+            save_raw,
+        } => run_capture_test(device_index, resolution, mirror, save_raw),
         Command::ForceMatrix {
             matrix,
             device_index,
@@ -103,6 +104,7 @@ fn run_capture_test(
     device_index: usize,
     resolution: Option<(u32, u32)>,
     mirror: bool,
+    save_raw: bool,
 ) -> anyhow::Result<()> {
     print_header();
     println!();
@@ -129,6 +131,20 @@ fn run_capture_test(
             expected_size,
             frame.width,
             frame.height
+        );
+    }
+
+    if save_raw {
+        let raw_path = std::path::PathBuf::from("capture_raw.nv12");
+        std::fs::write(&raw_path, &frame.data)?;
+        println!(
+            "Saved raw NV12: {} ({} bytes)",
+            raw_path.display(),
+            frame.data.len()
+        );
+        println!(
+            "  ffmpeg decode: ffmpeg -f rawvideo -video_size {}x{} -pix_fmt nv12 -i {} -vframes 1 -y ffmpeg_out.bmp",
+            frame.width, frame.height, raw_path.display()
         );
     }
 

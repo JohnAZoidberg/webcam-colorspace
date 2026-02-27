@@ -69,6 +69,31 @@ You can specify a resolution (e.g. `--capture-test 1280x720`) to match what your
 
 The tool reads 5 frames and keeps the last one, giving the camera time to settle auto-exposure. It also reads the nominal range (full vs limited) from the media type and uses it for conversion — this matters because full-range (0-255) and limited-range (16-235) use different math.
 
+Options:
+- `--mirror` — flip the image horizontally (selfie view, matches most video call apps)
+- `--save-raw` — save the raw NV12 bytes to `capture_raw.nv12` alongside the BMPs
+
+### Verifying with ffmpeg
+
+If you have ffmpeg installed, `--save-raw` lets you cross-check the decode against ffmpeg's output:
+
+```
+webcam-colorspace --capture-test --save-raw
+
+# Default decode (ffmpeg picks the matrix):
+ffmpeg -f rawvideo -video_size 1920x1080 -pix_fmt nv12 -i capture_raw.nv12 -vframes 1 -y ffmpeg_out.bmp
+
+# Force BT.709 input matrix:
+ffmpeg -f rawvideo -video_size 1920x1080 -pix_fmt nv12 -color_range pc -colorspace bt709 \
+  -i capture_raw.nv12 -vframes 1 -y ffmpeg_bt709.bmp
+
+# Force BT.601 input matrix:
+ffmpeg -f rawvideo -video_size 1920x1080 -pix_fmt nv12 -color_range pc -colorspace smpte170m \
+  -i capture_raw.nv12 -vframes 1 -y ffmpeg_bt601.bmp
+```
+
+Replace `1920x1080` with whatever resolution you captured at. Use `-color_range pc` for full-range cameras or `-color_range tv` for limited-range.
+
 ### `--force-matrix bt601|bt709`
 
 Overrides `MF_MT_YUV_MATRIX` on the source reader's media type. This tells the OS to decode the camera's YUV output using the specified matrix instead of whatever the driver advertises.
