@@ -50,9 +50,24 @@ fn read_device(node: &context::Node) -> Result<Option<DeviceInfo>> {
         let framesizes = dev.enum_framesizes(desc.fourcc).unwrap_or_default();
 
         for framesize in &framesizes {
-            for discrete in framesize.size.clone().to_discrete() {
+            let resolutions: Vec<(u32, u32)> = match &framesize.size {
+                v4l::framesize::FrameSizeEnum::Discrete(d) => {
+                    vec![(d.width, d.height)]
+                }
+                v4l::framesize::FrameSizeEnum::Stepwise(s) => {
+                    let mut sizes = Vec::new();
+                    for w in (s.min_width..=s.max_width).step_by(s.step_width as usize) {
+                        for h in (s.min_height..=s.max_height).step_by(s.step_height as usize) {
+                            sizes.push((w, h));
+                        }
+                    }
+                    sizes
+                }
+            };
+
+            for (width, height) in resolutions {
                 let intervals = dev
-                    .enum_frameintervals(desc.fourcc, discrete.width, discrete.height)
+                    .enum_frameintervals(desc.fourcc, width, height)
                     .unwrap_or_default();
 
                 let frame_rates: Vec<String> = intervals
@@ -90,7 +105,7 @@ fn read_device(node: &context::Node) -> Result<Option<DeviceInfo>> {
 
                 formats.push(FormatInfo {
                     pixel_format: fourcc_name(desc.fourcc),
-                    resolution: format!("{}x{}", discrete.width, discrete.height),
+                    resolution: format!("{}x{}", width, height),
                     frame_rate,
                     colorspace,
                 });
