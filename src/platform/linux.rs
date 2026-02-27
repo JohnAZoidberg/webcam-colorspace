@@ -50,7 +50,7 @@ fn read_device(node: &context::Node) -> Result<Option<DeviceInfo>> {
         let framesizes = dev.enum_framesizes(desc.fourcc).unwrap_or_default();
 
         for framesize in &framesizes {
-            for discrete in framesize.size.to_discrete() {
+            for discrete in framesize.size.clone().to_discrete() {
                 let intervals = dev
                     .enum_frameintervals(desc.fourcc, discrete.width, discrete.height)
                     .unwrap_or_default();
